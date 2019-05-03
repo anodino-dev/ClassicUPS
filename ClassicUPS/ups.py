@@ -6,6 +6,11 @@ from binascii import a2b_base64
 from datetime import datetime
 from dict2xml import dict2xml
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 SHIPPING_SERVICES = {
     '1dayair': '01',  # Next Day Air
     '2dayair': '02',  # 2nd Day Air
@@ -42,7 +47,7 @@ class UPSConnection(object):
         'track': 'https://onlinetools.ups.com/ups.app/xml/Track',
         'ship_confirm': 'https://onlinetools.ups.com/ups.app/xml/ShipConfirm',
         'ship_accept': 'https://onlinetools.ups.com/ups.app/xml/ShipAccept',
-        'rate': 'https://onlinetools.ups.com/ups.app/xml/Rate'
+        'rate': 'https://onlinetools.ups.com/ups.app/xml/Rate',
     }
 
     def __init__(self, license_number, user_id, password, shipper_number=None,
@@ -83,11 +88,12 @@ class UPSConnection(object):
             url = self.test_urls[url_action]
 
         xml = self._generate_xml(url_action, ups_request)
-
+        logger.debug('xml sent:{}'.format(xml))
         resp = requests.post(
             url,
             data=xml.replace('&', u'&#38;').encode('ascii', 'xmlcharrefreplace')
         )
+        logger.debug('status:{} response:{}'.format(resp.status_code,resp.text))
 
         return UPSResult(resp.text)
 
