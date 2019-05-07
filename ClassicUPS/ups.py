@@ -41,13 +41,16 @@ class UPSConnection(object):
         'track': 'https://wwwcie.ups.com/ups.app/xml/Track',
         'ship_confirm': 'https://wwwcie.ups.com/ups.app/xml/ShipConfirm',
         'ship_accept': 'https://wwwcie.ups.com/ups.app/xml/ShipAccept',
-        'rate': 'https://wwwcie.ups.com/ups.app/xml/Rate'
+        'rate': 'https://wwwcie.ups.com/ups.app/xml/Rate',
+        'label': 'https://wwwcie.ups.com/ups.app/xml/LabelRecovery',
+        
     }
     production_urls = {
         'track': 'https://onlinetools.ups.com/ups.app/xml/Track',
         'ship_confirm': 'https://onlinetools.ups.com/ups.app/xml/ShipConfirm',
         'ship_accept': 'https://onlinetools.ups.com/ups.app/xml/ShipAccept',
         'rate': 'https://onlinetools.ups.com/ups.app/xml/Rate',
+        'label': 'https://onlinetools.ups.com/ups.app/xml/LabelRecovery',
     }
 
     def __init__(self, license_number, user_id, password, shipper_number=None,
@@ -88,12 +91,12 @@ class UPSConnection(object):
             url = self.test_urls[url_action]
 
         xml = self._generate_xml(url_action, ups_request)
-        logger.debug('xml sent:{}'.format(xml))
+        logger.debug(u'xml sent:{}'.format(xml))
         resp = requests.post(
             url,
             data=xml.replace('&', u'&#38;').encode('ascii', 'xmlcharrefreplace')
         )
-        logger.debug('status:{} response:{}'.format(resp.status_code,resp.text))
+        logger.debug(u'status:{} response:{}'.format(resp.status_code,resp.text))
 
         return UPSResult(resp.text)
 
@@ -105,6 +108,9 @@ class UPSConnection(object):
 
     def create_rates(self, *args, **kwargs):
         return Rates(self, *args, **kwargs)
+
+    def recovery_label(self,*args, **kwargs):
+        return Label(self, *args, **kwargs)
 
     def check_shipping_valid(self, *args, **kwards):
         return ShippingValid(self, *args, **kwargs)
@@ -275,7 +281,7 @@ class Shipment(object):
     def __init__(self, ups_conn, from_addr, to_addr, packages, shipping_service, reference_numbers=None,
                  file_format='EPL',
                  description='', dimensions_unit='IN', weight_unit='LBS',
-                 delivery_confirmation=None):
+                 delivery_confirmation=None, shipment_reference=None):
 
         self.file_format = file_format
 
@@ -370,7 +376,8 @@ class Shipment(object):
                 },
             },
         }
-
+        if shipment_reference:
+            shipping_request['ShipmentConfirmRequest']['Shipment'].update(ReferenceNumber={'Code':'TN','Value':shipment_reference})
         if to_addr.get('email'):
             shipping_request['ShipmentConfirmRequest']['Shipment']['ShipmentServiceOptions'] = {
                 'ShipmentServiceOptions': [
@@ -505,3 +512,37 @@ class Shipment(object):
 
     def save_label(self, fd):
         fd.write(self.get_label()[0])
+
+
+class Label(object):
+
+# <LabelRecoveryRequest>
+# <Request>
+# <RequestAction>LabelRecovery</RequestAction>
+# </Request>
+# <LabelSpecification>
+# <LabelImageFormat>
+# <Code>GIF</Code>
+# </LabelImageFormat>
+# </LabelSpecification>
+# <TrackingNumber>Your Tracking Number</TrackingNumber>
+# </LabelRecoveryRequest>
+
+    def __init__(self, ups_conn, tracking_number='',  file_format='PDF'):
+        
+        label_recovery_request={'LabelRecoveryRequest':{
+                'Request':{
+                    'RequestAction':'LabelRecovery'
+                    } ,
+                'LabelSpecification':{
+                    'LabelImageFormat':{'Code':file_format}
+                    },
+                'TrackingNumber':tracking_number
+            }}
+
+        self.label_result= ups_conn._transmit_request('label', label_recovery_request)
+
+    def get_label(self):
+        return a2b_base64(self.label_result.dict_response['LabelRecoveryResponse']['LabelResults'][0]['LabelImage']['GraphicImage'])
+    
+    
