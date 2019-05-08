@@ -364,6 +364,7 @@ class Shipment(object):
                             },
                         },
                     },
+                    'RateInformation':{'NegotiatedRatesIndicator':''},
                     'ShipmentServiceOptions': {},
                 },
                 'LabelSpecification': {  # TODO: support GIF and EPL (and others)
