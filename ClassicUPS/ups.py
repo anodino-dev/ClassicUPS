@@ -91,12 +91,14 @@ class UPSConnection(object):
             url = self.test_urls[url_action]
 
         xml = self._generate_xml(url_action, ups_request)
-        logger.debug(u'xml sent:{}'.format(xml))
+#         logger.debug(u'xml sent:{}'.format(xml))
+#         print u'xml sent:{}'.format(xml)
         resp = requests.post(
             url,
             data=xml.replace('&', u'&#38;').encode('ascii', 'xmlcharrefreplace')
         )
-        logger.debug(u'status:{} response:{}'.format(resp.status_code, resp.text))
+#         logger.debug(u'status:{} response:{}'.format(resp.status_code, resp.text))
+#         print u'status:{} response:{}'.format(resp.status_code, resp.text)
 
         return UPSResult(resp.text)
 
@@ -382,46 +384,25 @@ class Shipment(object):
         if shipment_reference:
             shipping_request['ShipmentConfirmRequest']['Shipment'].update(ReferenceNumber={'Code':'TN', 'Value':shipment_reference})
         if to_addr.get('email'):
-            shipping_request['ShipmentConfirmRequest']['Shipment']['ShipmentServiceOptions'] = {
-                'ShipmentServiceOptions': [
-                    {
-                        'Notification': {
+            shipping_request['ShipmentConfirmRequest']['Shipment']['ShipmentServiceOptions'] = { 'Notification': [
+                         {
                             'NotificationCode': 6,
-                            'Email': {
+                            'EMailMessage': {
                                 'EMailAddress': to_addr['email']
                             },
-                            'Locale': {
-                                'Language': 'SPA',
-                                'Dialect': 97,
-                            }
-                        }
-                    },
-                    {
-                        'Notification': {
+                         }, {
                             'NotificationCode': 8,
-                            'Email': {
+                            'EMailMessage': {
                                 'EMailAddress': to_addr['email']
                             },
-                            'Locale': {
-                                'Language': 'SPA',
-                                'Dialect': 97,
-                            }
-                        }
-                    },
-                    {
-                        'Notification': {
+                         }, {
                             'NotificationCode': 7,
-                            'Email': {
+                            'EMailMessage': {
                                 'EMailAddress': to_addr['email']
                             },
-                            'Locale': {
-                                'Language': 'SPA',
-                                'Dialect': 97,
-                            }
                         }
-                    },
-                ]
-            }
+                ]}
+            
 
         if delivery_confirmation:
             shipping_request['ShipmentConfirmRequest']['Shipment']['Package']['PackageServiceOptions']['DeliveryConfirmation'] = {
