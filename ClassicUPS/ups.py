@@ -96,7 +96,7 @@ class UPSConnection(object):
             url,
             data=xml.replace('&', u'&#38;').encode('ascii', 'xmlcharrefreplace')
         )
-        logger.debug(u'status:{} response:{}'.format(resp.status_code,resp.text))
+        logger.debug(u'status:{} response:{}'.format(resp.status_code, resp.text))
 
         return UPSResult(resp.text)
 
@@ -109,7 +109,7 @@ class UPSConnection(object):
     def create_rates(self, *args, **kwargs):
         return Rates(self, *args, **kwargs)
 
-    def recovery_label(self,*args, **kwargs):
+    def recovery_label(self, *args, **kwargs):
         return Label(self, *args, **kwargs)
 
     def check_shipping_valid(self, *args, **kwards):
@@ -287,20 +287,10 @@ class Shipment(object):
 
         packages_list = []
         for package in packages:
-            dimensions = package['dimensions']
             weight = package['weight']
-            packages_list.append({
+            data = {
                 'PackagingType': {
                     'Code': package.get('packaging_type') or '02'
-                },
-                'Dimensions': {
-                    'UnitOfMeasurement': {
-                        'Code': dimensions_unit,
-                        # default unit: inches (IN)
-                    },
-                    'Length': dimensions['length'],
-                    'Width': dimensions['width'],
-                    'Height': dimensions['height'],
                 },
                 'PackageWeight': {
                     'UnitOfMeasurement': {
@@ -310,7 +300,20 @@ class Shipment(object):
                     'Weight': weight,
                 },
                 'PackageServiceOptions': {},
-            })
+            }
+            if package.get('dimensions'):
+                dimensions = package['dimensions']
+                data.update({  'Dimensions': {
+                    'UnitOfMeasurement': {
+                        'Code': dimensions_unit,
+                        # default unit: inches (IN)
+                    },
+                    'Length': dimensions['length'],
+                    'Width': dimensions['width'],
+                    'Height': dimensions['height'],
+                },
+                })
+            packages_list.append(data)
 
         shipping_request = {
             'ShipmentConfirmRequest': {
@@ -377,7 +380,7 @@ class Shipment(object):
             },
         }
         if shipment_reference:
-            shipping_request['ShipmentConfirmRequest']['Shipment'].update(ReferenceNumber={'Code':'TN','Value':shipment_reference})
+            shipping_request['ShipmentConfirmRequest']['Shipment'].update(ReferenceNumber={'Code':'TN', 'Value':shipment_reference})
         if to_addr.get('email'):
             shipping_request['ShipmentConfirmRequest']['Shipment']['ShipmentServiceOptions'] = {
                 'ShipmentServiceOptions': [
@@ -442,7 +445,7 @@ class Shipment(object):
                     'Code': ref_code,
                     'Value': ref_number
                 })
-            #reference_dict[0]['BarCodeIndicator'] = '1'
+            # reference_dict[0]['BarCodeIndicator'] = '1'
 
             if from_addr['country'] == 'US' and to_addr['country'] == 'US':
                 shipping_request['ShipmentConfirmRequest']['Shipment']['Package']['ReferenceNumber'] = reference_dict
@@ -528,9 +531,9 @@ class Label(object):
 # <TrackingNumber>Your Tracking Number</TrackingNumber>
 # </LabelRecoveryRequest>
 
-    def __init__(self, ups_conn, tracking_number='',  file_format='PDF'):
+    def __init__(self, ups_conn, tracking_number='', file_format='PDF'):
         
-        label_recovery_request={'LabelRecoveryRequest':{
+        label_recovery_request = {'LabelRecoveryRequest':{
                 'Request':{
                     'RequestAction':'LabelRecovery'
                     } ,
@@ -540,7 +543,7 @@ class Label(object):
                 'TrackingNumber':tracking_number
             }}
 
-        self.label_result= ups_conn._transmit_request('label', label_recovery_request)
+        self.label_result = ups_conn._transmit_request('label', label_recovery_request)
 
     def get_label(self):
         return a2b_base64(self.label_result.dict_response['LabelRecoveryResponse']['LabelResults'][0]['LabelImage']['GraphicImage'])
