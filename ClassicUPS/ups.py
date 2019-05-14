@@ -528,6 +528,6 @@ class Label(object):
         self.label_result = ups_conn._transmit_request('label', label_recovery_request)
 
     def get_label(self):
-        return a2b_base64(self.label_result.dict_response['LabelRecoveryResponse']['LabelResults'][0]['LabelImage']['GraphicImage'])
+        return a2b_base64(self.label_result.dict_response['LabelRecoveryResponse']['LabelResults']['LabelImage']['GraphicImage'])
     
     
