@@ -365,7 +365,7 @@ class Shipment(object):
                         },
                     },
                     'RateInformation':{'NegotiatedRatesIndicator':''},
-                    'ShipmentServiceOptions': {},
+                    'ShipmentServiceOptions': {'DirectDeliveryOnlyIndicator':{}},
                 },
                 'LabelSpecification': {  # TODO: support GIF and EPL (and others)
                     'LabelPrintMethod': {
@@ -385,7 +385,9 @@ class Shipment(object):
         if shipment_reference:
             shipping_request['ShipmentConfirmRequest']['Shipment'].update(ReferenceNumber={'Code':'TN', 'Value':shipment_reference})
         if to_addr.get('email'):
-            shipping_request['ShipmentConfirmRequest']['Shipment']['ShipmentServiceOptions'] = { 'Notification': [
+            shipping_request['ShipmentConfirmRequest']['Shipment']['ShipmentServiceOptions'] = { 
+                'DirectDeliveryOnlyIndicator':{},
+                'Notification': [
                          {
                             'NotificationCode': 6,
                             'EMailMessage': {
